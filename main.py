@@ -17,6 +17,23 @@ ENTRY = (
 OUTPUT_PATH = "/output/entry.txt"
 
 
+def validate_entry() -> str:
+    """Re-read entry.txt from disk and re-validate the gate.
+
+    Reads raw bytes, decodes as strict UTF-8, compares the contents
+    exactly against the expected entry, and re-checks the gate:
+    1-200 characters, single line, non-whitespace.
+    """
+    with open(OUTPUT_PATH, "rb") as f:
+        raw = f.read()
+    text = raw.decode("utf-8")  # raises UnicodeDecodeError if not valid UTF-8
+    assert text == ENTRY.strip(), "entry.txt on disk differs from expected entry"
+    assert text.strip(), "entry must not be empty or whitespace-only"
+    assert "\n" not in text and "\r" not in text, "entry must be a single line"
+    assert 1 <= len(text) <= 200, f"entry is {len(text)} chars, must be 1-200"
+    return text
+
+
 def main() -> None:
     text = ENTRY.strip()
     assert text, "entry must not be empty"
@@ -25,7 +42,8 @@ def main() -> None:
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         f.write(text)
-    print(f"Wrote {len(text)} chars to {OUTPUT_PATH}")
+    checked = validate_entry()
+    print(f"Wrote {len(text)} chars to {OUTPUT_PATH} (validated: {len(checked)} chars)")
 
 
 if __name__ == "__main__":
